@@ -3,8 +3,6 @@ import gzip
 import os
 import numpy as np
 
-print('not working because I changed the number ordering from theano to tensorflow...i think')
-
 #data from http://jmcauley.ucsd.edu/data/amazon/
 
 ###################Basic parameters####################
@@ -12,7 +10,7 @@ MAX_SEQUENCE_LENGTH = 1000
 MAX_NB_WORDS = 40000
 EMBEDDING_DIM = 100
 VALIDATION_SPLIT = 0.2
-GLOVE_DIR = '/home/dan-laptop/github/ulysses/glove.6B/'
+GLOVE_DIR = './glove.6B/'
 
 #####################set up tokenizer###################
 #generator for tokenizer
@@ -83,12 +81,13 @@ for word, i in word_index.items():
     if embedding_vector is not None:
         # words not found in embedding index will be all-zeros.
         embedding_matrix[i] = embedding_vector
-def run_model(train=1):
+def make_model():
     ##################### Create RNN #####################################3
     from keras.preprocessing import sequence
     from keras.models import Model, Sequential
     from keras.layers import Dense, Dropout, Activation, Input, MaxPooling1D
     from keras.layers import Embedding, LSTM, RepeatVector,UpSampling1D,Convolution1D
+    from keras.optimizers import Adam
 
     # Convolution
     timesteps = 1
@@ -118,37 +117,42 @@ def run_model(train=1):
     model.add(LSTM(lstm_output_size))
     model.add(Dense(1))
     model.add(Activation('sigmoid')) #stat exchange what loss function for binary face detection.
+    adam = Adam(lr=0.001)
     model.compile(loss='binary_crossentropy',
-                  optimizer='adam',
-                  metrics=['mse'])
+                  optimizer=adam,
+                  metrics=['mse'], )
+    
+    return model	
 
     ##################### Train RNN #####################################
-    training = 1
+def train_model(training=1):
     if training == 1:
         from keras.callbacks import History
         history = History()
 
-        trials_per_epoch = 2080
-        batch_size = 32
-        nb_epoch = 5
+        trials_per_epoch = 12800
+        batch_size = 64
+        nb_epoch = 2
 
-        model.fit_generator(generator_modelData(path,batch_size=32), trials_per_epoch, nb_epoch=nb_epoch,
-                            validation_data=generator_modelData(path,batch_size=32),nb_val_samples=1280,
+        model.fit_generator(generator_modelData(path,batch_size=batch_size), trials_per_epoch, nb_epoch=nb_epoch,
+                            validation_data=generator_modelData(path,batch_size=batch_size),nb_val_samples=1280,
                             callbacks=[history])
         model.save_weights('./amazon_helpfulness_convnet.h5')
 
         history = history.history
 
-        import matplotlib.pyplot as plt
-        plt.style.use('ggplot')
+        #import matplotlib.pyplot as plt
+        #plt.style.use('ggplot')
 
-        plt.plot(history.epoch,history.history['acc'],label='training accuracy')
-        plt.plot(history.epoch,history.history['val_acc'],label='test accuracy')
-        plt.xlabel('epoch')
-        plt.ylabel('model accuracy')
-        plt.ylim((0.50,1.00))
+        #plt.plot(history.epoch,history.history['acc'],label='training accuracy')
+        #plt.plot(history.epoch,history.history['val_acc'],label='test accuracy')
+        #plt.xlabel('epoch')
+        #plt.ylabel('model accuracy')
+        #plt.ylim((0.50,1.00))
 
-        plt.show()
-    return model
+        # plt.show()
+    return history
 
-run_model()
+#model.optimizer.lr = 0.01
+model = make_model()
+history = train_model()
