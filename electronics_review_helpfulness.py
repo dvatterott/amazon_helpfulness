@@ -85,7 +85,7 @@ def make_model():
     ##################### Create RNN #####################################3
     from keras.preprocessing import sequence
     from keras.models import Model, Sequential
-    from keras.layers import Dense, Dropout, Activation, Input, MaxPooling1D
+    from keras.layers import Dense, Dropout, Activation, Input, MaxPooling1D, GlobalMaxPooling1D
     from keras.layers import Embedding, LSTM, RepeatVector,UpSampling1D,Convolution1D
     from keras.optimizers import Adam
 
@@ -112,9 +112,11 @@ def make_model():
                             border_mode='valid',
                             activation='relu',
                             subsample_length=1))
-    model.add(MaxPooling1D(pool_length=pool_length))
-    model.add(Dropout(0.25))
-    model.add(LSTM(lstm_output_size))
+    model.add(GlobalMaxPooling1D(pool_length=pool_length))
+    #model.add(Dropout(0.25))
+    ##model.add(LSTM(lstm_output_size)
+    model.add(Dense(250, activation='relu'))
+    model.add(Dropout(0.2))
     model.add(Dense(1))
     model.add(Activation('sigmoid')) #stat exchange what loss function for binary face detection.
     adam = Adam(lr=0.001)
@@ -125,7 +127,7 @@ def make_model():
     return model	
 
     ##################### Train RNN #####################################
-def train_model(training=1):
+def train_model(model,training=1):
     if training == 1:
         from keras.callbacks import History
         history = History()
@@ -155,4 +157,4 @@ def train_model(training=1):
 
 #model.optimizer.lr = 0.01
 model = make_model()
-history = train_model()
+history = train_model(model)
